@@ -15,9 +15,9 @@ allow_methods=[""],
 allow_headers=["*"],
 )
 
-engine = ExternalAuditEngine()
-
+engine = ExternalAuditEngine(
 YOUTUBE_API_KEY = os.getenv("AIzaSyAatUA_kZsJFNhxr2Ie_lpuAErynj7bbzM","")
+
 def extract_video_id(url: str) -> str:
 """
 Extrai o ID do vídeo de URLs comuns do YouTube.
@@ -155,6 +155,7 @@ except Exception as e:
 if name == "main":
 import uvicorn
 uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
