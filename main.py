@@ -73,7 +73,7 @@ video_id = extract_video_id(youtube_url)
 
 params = {
     "id": video_id,
-    "key": YOUTUBE_API_KEY,
+    "key": AIzaSyAatUA_kZsJFNhxr2Ie_lpuAErynj7bbzM,
     "part": "snippet,contentDetails,statistics",
 }
 
@@ -156,3 +156,4 @@ except Exception as e:
 if name == "main":
 import uvicorn
 uvicorn.run(app, host="0.0.0.0", port=8000)
+
