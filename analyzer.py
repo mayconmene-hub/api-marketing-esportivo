@@ -7,21 +7,16 @@ class ExternalAuditEngine:
 def init(self, upload_folder="temp_files"):
 self.upload_folder = upload_folder
 os.makedirs(upload_folder, exist_ok=True)
+
 def calculate_audience_decay(self, appearance_time, total_duration, total_views):
-    """
-    Estima quantas pessoas estavam assistindo naquele ponto do vídeo.
-    Decaimento linear: início = 100% dos views, fim = 40%.
-    """
+    # início = 100% dos views, fim = 40%
     if total_duration == 0:
         return total_views
-
     position_percent = appearance_time / total_duration
-    retention_factor = 1.0 - (position_percent * 0.6)  # 1.0 → 0.4
+    retention_factor = 1.0 - (position_percent * 0.6)
     return int(total_views * retention_factor)
 
 def scan(self, video_path, logo_path, metadata, cpm=25.00):
-    print(f"👁️ Analisando vídeo '{metadata.get('title', '')}'...")
-
     img_logo = cv2.imread(logo_path, cv2.IMREAD_GRAYSCALE)
     if img_logo is None:
         raise ValueError("Não foi possível ler a imagem da logo.")
@@ -33,16 +28,17 @@ def scan(self, video_path, logo_path, metadata, cpm=25.00):
     fps = cap.get(cv2.CAP_PROP_FPS) or 0
     total_frames_video = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
 
-    # Se a duração não veio da API, calcula pela própria mídia
+    # Se a duração não veio da API, calcula pela mídia
     if not metadata.get("duration") and fps > 0:
         metadata["duration"] = int(total_frames_video / fps)
 
-    total_duration = metadata.get("duration", 0)
-    total_views = metadata.get("view_count", 0)
+    total_duration = int(metadata.get("duration", 0) or 0)
+    total_views = int(metadata.get("view_count", 0) or 0)
 
-    # Detector SIFT
     sift = cv2.SIFT_create()
     kp_logo, des_logo = sift.detectAndCompute(img_logo, None)
+    if des_logo is None:
+        raise ValueError("Não foi possível extrair features da logo (imagem ruim/pequena).")
 
     index_params = dict(algorithm=1, trees=5)
     search_params = dict(checks=50)
@@ -74,7 +70,7 @@ def scan(self, video_path, logo_path, metadata, cpm=25.00):
             if len(good) > 12:
                 is_visible = True
 
-        current_seconds = frame_count / fps if fps > 0 else 0
+        current_seconds = (frame_count / fps) if fps > 0 else 0.0
 
         if is_visible:
             estimated_viewers = self.calculate_audience_decay(
@@ -82,7 +78,7 @@ def scan(self, video_path, logo_path, metadata, cpm=25.00):
             )
 
             cpm_per_second = cpm / 30.0
-            frame_duration = frame_skip / fps if fps > 0 else 0
+            frame_duration = (frame_skip / fps) if fps > 0 else 0.0
             instant_value = (estimated_viewers / 1000.0) * cpm_per_second * frame_duration
             accumulated_media_value += instant_value
 
