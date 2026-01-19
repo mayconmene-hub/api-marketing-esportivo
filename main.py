@@ -16,14 +16,13 @@ allow_headers=["*"],
 )
 
 engine = ExternalAuditEngine()
-YOUTUBE_API_KEY = os.getenv("AIzaSyAatUA_kZsJFNhxr2Ie_lpuAErynj7bbzM","")
+YOUTUBE_API_KEY = os.getenv("AIzaSyAatUA_kZsJFNhxr2Ie_lpuAErynj7bbzM", "")
 
 def extract_video_id(url: str) -> str:
 """
 Extrai o ID do vídeo de URLs comuns do YouTube.
 Ex: https://www.youtube.com/watch?v=ABC123  -> ABC123
 """
-# Padrões comuns
 patterns = [
 r"v=([^&]+)",               # watch?v=ID
 r"youtu.be/([^?&]+)",      # youtu.be/ID
@@ -42,12 +41,7 @@ Converte duração ISO8601 (PT10M15S) para segundos inteiros.
 if not duration_str:
 return 0
 
-pattern = re.compile(
-    r"PT"
-    r"(?:(\d+)H)?"
-    r"(?:(\d+)M)?"
-    r"(?:(\d+)S)?"
-)
+pattern = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?")
 match = pattern.fullmatch(duration_str)
 if not match:
     return 0
@@ -56,18 +50,19 @@ hours = int(match.group(1) or 0)
 minutes = int(match.group(2) or 0)
 seconds = int(match.group(3) or 0)
 return hours * 3600 + minutes * 60 + seconds
+
 def fetch_youtube_metadata(youtube_url: str) -> dict:
 """
 Usa YouTube Data API v3 para buscar título, canal, views e duração.
 """
-if not YOUTUBE_API_KEY:
-# Sem chave, devolve metadados mínimos
+if not YOUTUBE_API_KEY: AIzaSyAatUA_kZsJFNhxr2Ie_lpuAErynj7bbzM
 return {
 "title": youtube_url,
 "channel": "Desconhecido",
 "view_count": 0,
 "duration": 0,
 }
+
 video_id = extract_video_id(youtube_url)
 
 params = {
@@ -76,7 +71,12 @@ params = {
     "part": "snippet,contentDetails,statistics",
 }
 
-resp = requests.get("https://www.googleapis.com/youtube/v3/videos", params=params, timeout=10)
+resp = requests.get(
+    "https://www.googleapis.com/youtube/v3/videos",
+    params=params,
+    timeout=10,
+)
+
 if resp.status_code != 200:
     return {
         "title": youtube_url,
@@ -100,11 +100,10 @@ snippet = item.get("snippet", {})
 stats = item.get("statistics", {})
 content = item.get("contentDetails", {})
 
-title = snippet.get("title")
-channel = snippet.get("channelTitle")
+title = snippet.get("title", youtube_url)
+channel = snippet.get("channelTitle", "Desconhecido")
 view_count = int(stats.get("viewCount", 0))
-duration_iso = content.get("duration")
-duration_seconds = parse_iso8601_duration(duration_iso)
+duration_seconds = parse_iso8601_duration(content.get("duration", ""))
 
 return {
     "title": title,
@@ -144,20 +143,9 @@ try:
     if os.path.exists(logo_path):
         os.remove(logo_path)
 
-    # Adiciona a URL original e cliente para referência
     results["youtube_url"] = youtube_url
     results["client"] = client_name
-
     return results
 
 except Exception as e:
     return {"error": str(e)}
-if name == "main":
-import uvicorn
-uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
-
-
