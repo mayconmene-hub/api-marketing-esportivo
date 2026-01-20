@@ -9,8 +9,8 @@ from analyzer import ExternalAuditEngine
 app = FastAPI()
 
 app.add_middleware(
-   CORSMiddleware,
-allow_origins=[""],
+CORSMiddleware,
+allow_origin_regex=r"^https://..(lovable.app|lovableproject.com)$",
 allow_methods=[""],
 allow_headers=["*"],
 )
@@ -154,4 +154,5 @@ async def scan_hybrid(
 
     except Exception as e:
         return {"error": str(e)}
+
 
